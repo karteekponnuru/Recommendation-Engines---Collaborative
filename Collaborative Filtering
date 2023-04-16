@@ -1,0 +1,54 @@
+import numpy as np
+
+# Mock dataset
+ratings = [
+    [4, 0, 3, 5, 0],
+    [0, 2, 4, 0, 1],
+    [3, 5, 0, 4, 0],
+    [0, 1, 5, 0, 2],
+    [2, 0, 0, 3, 4],
+]
+
+# Define a function to compute the Pearson correlation coefficient between two users
+def pearson_correlation(u1, u2):
+    common_ratings = np.where((u1 != 0) & (u2 != 0))
+    if len(common_ratings[0]) == 0:
+        return 0
+    u1_common = u1[common_ratings]
+    u2_common = u2[common_ratings]
+    if np.std(u1_common) == 0 or np.std(u2_common) == 0:
+        return 0
+    return np.corrcoef(u1_common, u2_common)[0, 1]
+
+# Compute the similarity matrix between users
+ratings = np.array(ratings)
+num_users, num_movies = ratings.shape
+similarity_matrix = np.zeros((num_users, num_users))
+for i in range(num_users):
+    for j in range(num_users):
+        similarity_matrix[i, j] = pearson_correlation(ratings[i], ratings[j])
+
+# Define a function to predict a rating for a user and a movie
+def predict_rating(user_index, movie_index):
+    if ratings[user_index, movie_index] != 0:
+        return ratings[user_index, movie_index]
+    similarities = similarity_matrix[user_index]
+    weighted_ratings = ratings[:, movie_index] * similarities
+    return np.sum(weighted_ratings) / np.sum(np.abs(similarities[ratings[:, movie_index] != 0]))
+
+# Generate predictions for all missing ratings
+predicted_ratings = np.zeros((num_users, num_movies))
+for i in range(num_users):
+    for j in range(num_movies):
+        predicted_ratings[i, j] = predict_rating(i, j)
+
+# Recommend the top N movies for each user based on the predicted ratings
+def recommend_movies(user_index, top_n=3):
+    movie_indices = np.argsort(predicted_ratings[user_index])[::-1]
+    rated_movies = np.where(ratings[user_index] != 0)[0]
+    recommendations = [m for m in movie_indices if m not in rated_movies]
+    return recommendations[:top_n]
+
+# Print recommendations for each user
+for user_index in range(num_users):
+    print(f"Top 3 recommendations for User {user_index + 1}: {recommend_movies(user_index)}")
