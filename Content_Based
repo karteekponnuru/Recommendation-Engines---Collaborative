@@ -1,0 +1,38 @@
+# Movie titles
+movies = [
+    "Movie 1",
+    "Movie 2",
+    "Movie 3",
+    "Movie 4",
+    "Movie 5",
+]
+
+# Genre features (rows: movies, columns: genres)
+# Each row is a binary vector representing the presence (1) or absence (0) of a genre
+genres = [
+    [1, 0, 1, 0, 0],  # Action, Sci-Fi
+    [0, 1, 0, 1, 0],  # Comedy, Romance
+    [1, 0, 0, 0, 1],  # Action, Thriller
+    [0, 1, 1, 0, 0],  # Comedy, Sci-Fi
+    [0, 0, 0, 1, 1],  # Romance, Thriller
+]
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Compute the cosine similarity matrix between movies based on their genre features
+genres = np.array(genres)
+similarity_matrix = cosine_similarity(genres)
+
+# Define a function to recommend the top N similar movies for a given movie
+def recommend_movies(movie_index, top_n=3):
+    movie_similarities = similarity_matrix[movie_index]
+    similar_movie_indices = np.argsort(movie_similarities)[::-1]
+    # Exclude the movie itself from the recommendations
+    recommendations = [m for m in similar_movie_indices if m != movie_index]
+    return recommendations[:top_n]
+
+# Print recommendations for each movie
+for movie_index, movie_title in enumerate(movies):
+    recommended_movie_indices = recommend_movies(movie_index)
+    recommended_movie_titles = [movies[i] for i in recommended_movie_indices]
+    print(f"Top 3 recommendations for {movie_title}: {recommended_movie_titles}")
